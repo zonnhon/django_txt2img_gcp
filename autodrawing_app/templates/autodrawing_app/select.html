@@ -1,0 +1,229 @@
+{% extends "autodrawing_app/base.html" %}
+{% load static %}
+{% load filters %}
+{% block content %}
+    <div class="container">
+    <span class="label">date: </span>
+    <select id="mySelect" title="foo"  name="selected_date">
+<!--        <option value="2023-05-30" selected>2023-05-30</option>-->
+<!--        <option value="2023-05-29">2023-05-29</option>-->
+        {% for date in dates %}
+            <option value="{{ date.datestr }}">{{ date.datestr }}</option>
+        {% endfor %}
+    </select>
+    </div>
+    <div class="container">
+    <span class="label">pages: </span>
+    <div id="page_container"></div>
+    </div>
+    <p id="selectedText"></p>
+    <p id="content_wc">內文文字雲</p>
+    <p id="content_wc_imgPath" style="display: none"></p>
+
+
+<!--    <div  style="margin:auto">-->
+
+    <div class="content">
+        <p id="content_title"></p>
+        <textarea  id="content_words"  rows="20" cols="80" style="resize:none; border:0px;" readonly></textarea >
+        <img id="content_wc_img" src="" alt="content word cloud">
+    </div>
+    <p id="content_sd">內文轉換圖片</p>
+    <p id="content_sd_imgPath0" style="display: none"></p>
+    <p id="content_sd_imgPath1" style="display: none"></p>
+    <p id="content_sd_imgPath2" style="display: none"></p>
+    <p id="content_sd_imgPath3" style="display: none"></p>
+    <div id="content_prompt"  class="content" style="width:1024px"></div>
+    <div class="content">
+        <img id="content_sd_img0" src="" onerror="this.src='{% static 'images/' %}fallback.png'"  alt="content image0">
+        <img id="content_sd_img1" src="" onerror="this.src='{% static 'images/' %}fallback.png'"  alt="content image1">
+    </div>
+    <div class="content">
+        <img id="content_sd_img2" src="" onerror="this.src='{% static 'images/' %}fallback.png'"  alt="content image2">
+        <img id="content_sd_img3" src="" onerror="this.src='{% static 'images/' %}fallback.png'"  alt="content image3">
+    </div>
+    <p id="comment_wc">留言文字雲</p>
+    <p id="comment_wc_imgPath" style="display: none"></p>
+
+    <div class="content">
+        <p>留言</p>
+        <textarea  id="comment_words"  rows="20" cols="80" style="resize:none; border:0px;" readonly></textarea >
+        <img id="comment_wc_img" src="" alt="comment word cloud">
+    </div>
+    <p id="comment_sd">留言轉換圖片</p>
+    <p id="comment_sd_imgPath0" style="display: none"></p>
+    <p id="comment_sd_imgPath1" style="display: none"></p>
+    <p id="comment_sd_imgPath2" style="display: none"></p>
+    <p id="comment_sd_imgPath3" style="display: none"></p>
+    <div id="comment_prompt" class="content" style="width:1024px"></div>
+    <div class="content">
+        <img id="comment_sd_img0"  src="" onerror="this.src='{% static 'images/' %}fallback.png'" alt="comment image0">
+        <img id="comment_sd_img1"  src="" onerror="this.src='{% static 'images/' %}fallback.png'" alt="comment image1">
+    </div>
+    <div class="content">
+        <img id="comment_sd_img2"  src="" onerror="this.src='{% static 'images/' %}fallback.png'" alt="comment image2">
+        <img id="comment_sd_img3"  src="" onerror="this.src='{% static 'images/' %}fallback.png'" alt="comment image3">
+    </div>
+    <script>
+        var pagenum = 1;
+        var currPage = 0;
+<!--    function getCookie(name) {-->
+<!--        let cookieValue = null;-->
+<!--        if (document.cookie && document.cookie !== '') {-->
+<!--            const cookies = document.cookie.split(';');-->
+<!--            for (let i = 0; i < cookies.length; i++) {-->
+<!--                const cookie = cookies[i].trim();-->
+<!--                if (cookie.substring(0, name.length + 1) === (name + '=')) {-->
+<!--                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));-->
+<!--                    break;-->
+<!--                }-->
+<!--            }-->
+<!--        }-->
+<!--        return cookieValue;-->
+<!--    }-->
+<!--    let csrftoken = getCookie('csrftoken');-->
+
+    function changDate() {
+        currPage = 0;
+
+        loadImg();
+
+
+    }
+
+    function setPageContainer(totalPage) {
+        var page_container = document.getElementById("page_container");
+        page_container.textContent = "";
+        var prev_page = document.createElement("a");
+        prev_page.textContent = "<-prev";
+        prev_page.href = "#";
+        prev_page.classList.add("clickable");
+        if (currPage>0) {
+            prev_page.addEventListener("click", function() {
+                console.log("Clicked on Element ");
+                let page=currPage-1;
+                changPage(page);
+            });
+        }
+        page_container.appendChild(prev_page);
+        for (let i = 0; i < totalPage; i++) {
+            var element = document.createElement("a");
+            var ii = i+1
+            element.textContent = ii;
+            element.href = "#";
+            element.classList.add("clickable");
+<!--            var element = document.createElement("span");-->
+<!--            element.textContent = "Element " + i;-->
+<!--            element.classList.add("clickable")-->
+            element.addEventListener("click", function() {
+                console.log("Clicked on Element " + ii);
+                changPage(i);
+            });
+            page_container.appendChild(element);
+        }
+        var next_page = document.createElement("a");
+        next_page.textContent = "next->";
+        next_page.href = "#";
+        next_page.classList.add("clickable");
+        if (currPage+1<totalPage) {
+            next_page.addEventListener("click", function() {
+                console.log("Clicked on Element");
+                let page=currPage+1;
+                changPage(page);
+            });
+        }
+        page_container.appendChild(next_page);
+    }
+
+    function changPage(page) {
+        currPage = page;
+        loadImg();
+    }
+
+    function loadImg() {
+        var mySelect = document.getElementById("mySelect");
+        var selectedOption = mySelect.options[mySelect.selectedIndex].text;
+<!--        var selectedOption = this.options[this.selectedIndex].text;-->
+        let currPageP = currPage+1;
+        document.getElementById("selectedText").textContent = "topic: {{ page_name }} || date: "+selectedOption+" || page: "+currPageP;
+        var pageName = "{{ page_name }}";
+        var basePath = "{% static 'images/' %}";
+        var dateString = selectedOption.replace(/-/g,'');
+        var contentImgPath = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_content_"+dateString+"_p"+currPage+"_wc.png";
+        document.getElementById("content_wc_imgPath").textContent = contentImgPath;
+        document.getElementById("content_wc_img").src = contentImgPath;
+        var contentImgPath0 = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_content_"+dateString+"_p"+currPage+"_0.png";
+        document.getElementById("content_sd_imgPath0").textContent = contentImgPath0;
+        var contentImgPath1 = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_content_"+dateString+"_p"+currPage+"_1.png";
+        document.getElementById("content_sd_imgPath1").textContent = contentImgPath1;
+        var contentImgPath2 = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_content_"+dateString+"_p"+currPage+"_2.png";
+        document.getElementById("content_sd_imgPath2").textContent = contentImgPath2;
+        var contentImgPath3 = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_content_"+dateString+"_p"+currPage+"_3.png";
+        document.getElementById("content_sd_imgPath3").textContent = contentImgPath3;
+        document.getElementById("content_sd_img0").src = contentImgPath0;
+        document.getElementById("content_sd_img1").src = contentImgPath1;
+        document.getElementById("content_sd_img2").src = contentImgPath2;
+        document.getElementById("content_sd_img3").src = contentImgPath3;
+        var commentImgPath = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_comment_"+dateString+"_p"+currPage+"_wc.png";
+        document.getElementById("comment_wc_imgPath").textContent = commentImgPath;
+        document.getElementById("comment_wc_img").src = commentImgPath;
+        var commentImgPath0 = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_comment_"+dateString+"_p"+currPage+"_0.png";
+        document.getElementById("comment_sd_imgPath0").textContent = commentImgPath0;
+        var commentImgPath1 = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_comment_"+dateString+"_p"+currPage+"_1.png";
+        document.getElementById("comment_sd_imgPath1").textContent = commentImgPath1;
+        var commentImgPath2 = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_comment_"+dateString+"_p"+currPage+"_2.png";
+        document.getElementById("comment_sd_imgPath2").textContent = commentImgPath2;
+        var commentImgPath3 = basePath + "{{ page_name }}/" + selectedOption + "/{{ page_name }}_comment_"+dateString+"_p"+currPage+"_3.png";
+        document.getElementById("comment_sd_imgPath3").textContent = commentImgPath3;
+        document.getElementById("comment_sd_img0").src = commentImgPath0;
+        document.getElementById("comment_sd_img1").src = commentImgPath1;
+        document.getElementById("comment_sd_img2").src = commentImgPath2;
+        document.getElementById("comment_sd_img3").src = commentImgPath3;
+
+        fetch('{{ page_name }}/update_content/', {
+            method: 'POST',
+            body: JSON.stringify({
+                'selected_date': selectedOption,
+                'page_name': "{{ page_name }}",
+                'page_num': currPage
+            }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf_token
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            // 使用返回的數據更新你的頁面
+            let content = data.content;
+            let comment = data.comment;
+            var pagenum = data.pagenum;
+
+            let content_title = document.getElementById('content_title');
+            content_title.textContent = content.title;
+            let content_words = document.getElementById('content_words');
+            content_words.textContent = content.content;
+            let content_prompt = document.getElementById('content_prompt');
+            content_prompt.textContent = content.prompt;
+            let comment_words = document.getElementById('comment_words');
+            comment_words.textContent = comment.content;
+            let comment_prompt = document.getElementById('comment_prompt');
+            comment_prompt.textContent = comment.prompt;
+
+            setPageContainer(pagenum)
+
+
+        });
+
+    }
+
+    window.onload = function() {
+<!--        document.getElementById("mySelect").addEventListener("change", loadImg);-->
+<!--        loadImg.call(document.getElementById("mySelect"));-->
+        document.getElementById("mySelect").addEventListener("change", changDate);
+        changDate();
+    };
+
+    </script>
+{% endblock %}

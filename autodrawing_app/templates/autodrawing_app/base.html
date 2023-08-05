@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Website {{ page_name }}</title>
+    <style>
+        .content {
+          width: fit-content;
+          margin: auto;
+        }
+
+        @media only screen and (max-width: 500px) {
+          .content {
+            margin: 0;
+          }
+        }
+
+        .container {
+            display: flex;
+            align-items: center;
+        }
+
+        .clickable {
+            margin-right: 10px;
+        }
+
+        .label {
+            width: 40px;
+            margin-right: 20px;
+        }
+    </style>
+    <script type="text/javascript">
+        var csrf_token = "{{ csrf_token }}";
+    </script>
+
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/autodrawing/news">news</a></li>
+            <li><a href="/autodrawing/game">game</a></li>
+            <li><a href="/autodrawing/comic">comic</a></li>
+        </ul>
+    </nav>
+
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

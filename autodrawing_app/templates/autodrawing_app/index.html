@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ tag }}</title>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{% url 'index' 'tag1' %}">Tag1</a></li>
+            <li><a href="{% url 'index' 'tag2' %}">Tag2</a></li>
+            <li><a href="{% url 'index' 'tag3' %}">Tag3</a></li>
+        </ul>
+    </nav>
+    <div>
+        <select id="dropdown" onchange="filterImages()">
+            <option value="">Select an option</option>
+            {% for image in images %}
+            <option value="{{ image.dropdown_choice }}">{{ image.dropdown_choice }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div id="images">
+        {% for image in images %}
+        <img id="{{ image.dropdown_choice }}" src="{{ image.image.url }}">
+        {% endfor %}
+    </div>
+    <script>
+        function filterImages() {
+            var dropdown = document.getElementById("dropdown");
+            var selected = dropdown.options[dropdown.selectedIndex].value;
+            var images = document.getElementById("images").getElementsByTagName("img");
+            for (var i = 0; i < images.length; i++) {
+                images[i].style.display = images[i].id == selected ? "block" : "none";
+            }
+        }
+    </script>
+</body>
+</html>
